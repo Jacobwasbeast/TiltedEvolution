@@ -45,12 +45,12 @@ void BrandingService::OnDraw() noexcept
 
     // Line 1 shadow + text
     draw->AddText(ImVec2(pos.x + 1.f, pos.y + 1.f), IM_COL32(0, 0, 0, 190), line1);
-    draw->AddText(pos, IM_COL32(200, 32, 32, 255), line1);
+    draw->AddText(pos, IM_COL32(214, 49, 43, 255), line1);
 
     // Line 2 below
     ImVec2 pos2 = ImVec2(pos.x, pos.y + line + 2.f);
     draw->AddText(ImVec2(pos2.x + 1.f, pos2.y + 1.f), IM_COL32(0, 0, 0, 190), line2);
-    draw->AddText(pos2, IM_COL32(200, 32, 32, 255), line2);
+    draw->AddText(pos2, IM_COL32(214, 49, 43, 255), line2);
 
     if (pFont)
         ImGui::PopFont();
