@@ -64,6 +64,9 @@ BSTEventResult QuestService::OnEvent(const TESQuestStartStopEvent* apEvent, cons
 
     if (TESQuest* pQuest = Cast<TESQuest>(TESForm::GetById(apEvent->formId)))
     {
+        if (!ShouldProcessQuestEvents(pQuest))
+            return BSTEventResult::kOk;
+
         if (IsNonSyncableQuest(pQuest))
             return BSTEventResult::kOk;
 
@@ -110,6 +113,9 @@ BSTEventResult QuestService::OnEvent(const TESQuestStageEvent* apEvent, const Ev
 
     if (TESQuest* pQuest = Cast<TESQuest>(TESForm::GetById(apEvent->formId)))
     {
+        if (!ShouldProcessQuestEvents(pQuest))
+            return BSTEventResult::kOk;
+
         if (IsNonSyncableQuest(pQuest))
             return BSTEventResult::kOk;
 
@@ -206,6 +212,12 @@ bool QuestService::TryApplyQuestUpdate(const NotifyQuestUpdate& aUpdate) noexcep
                      aUpdate.ClientQuestType, formId, pQuest->fullName.value.AsAscii());
     }
 
+    if (!ShouldProcessQuestEvents(pQuest))
+    {
+        spdlog::debug("Skipping quest update for follower in leader's cell, quest {:X}", pQuest->formID);
+        return true;
+    }
+
     bool bResult = false;
 
     ScopedQuestOverride questOverride;
@@ -275,4 +287,34 @@ void QuestService::DebugDumpQuests()
     auto& quests = ModManager::Get()->quests;
     for (TESQuest* pQuest : quests)
         spdlog::info("{:X}|{}|{}|{}", pQuest->formID, (uint8_t)pQuest->type, pQuest->priority, pQuest->idName.AsAscii());
+}
+
+bool QuestService::ShouldProcessQuestEvents(TESQuest* apQuest) const noexcept
+{
+    auto& partyService = m_world.GetPartyService();
+    if (!partyService.IsInParty())
+        return true;
+
+    if (partyService.IsLeader())
+        return true;
+
+    const uint32_t leaderPlayerId = partyService.GetLeaderPlayerId();
+    if (leaderPlayerId == 0)
+        return true;
+
+    Actor* pLeader = GetActorByPlayerId(leaderPlayerId, m_world);
+    Actor* pLocal = PlayerCharacter::Get();
+    if (!pLeader || !pLocal)
+        return true;
+
+    TESObjectCELL* pLeaderCell = pLeader->GetParentCellEx();
+    TESObjectCELL* pLocalCell = pLocal->GetParentCellEx();
+
+    if (pLeaderCell && pLocalCell && pLeaderCell == pLocalCell)
+    {
+        spdlog::debug("Follower and leader share cell; suppressing quest scripting for quest {:X}", apQuest->formID);
+        return false;
+    }
+
+    return true;
 }

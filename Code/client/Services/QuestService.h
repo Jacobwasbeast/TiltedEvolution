@@ -38,6 +38,7 @@ private:
     void OnUpdate(const UpdateEvent&) noexcept;
     bool TryApplyQuestUpdate(const NotifyQuestUpdate& aUpdate) noexcept;
     void FlushPendingUpdates() noexcept;
+    bool ShouldProcessQuestEvents(TESQuest* apQuest) const noexcept;
 
     World& m_world;
 
